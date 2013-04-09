@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2011 Jeff Garzik
  * Copyright 2009 Red Hat, Inc.
@@ -25,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
@@ -40,7 +40,11 @@
 #include <stdarg.h>
 
 #include <openssl/sha.h>
+
+#if defined(HAVE_ARGP_H)
 #include <argp.h>
+#endif 
+
 #include "server.h"
 
 const char *argp_program_version = PACKAGE_VERSION;
@@ -52,6 +56,7 @@ enum {
 	SFL_FOREGROUND		= (1 << 0),	/* run in foreground */
 };
 
+#if defined(HAVE_ARGP_H)
 static struct argp_option options[] = {
 	{ "config", 'c', "FILE", 0,
 	  "Read master configuration from FILE (default: server.json)" },
@@ -68,15 +73,15 @@ static struct argp_option options[] = {
 	  "heap, rather than simply exit(2)ing and letting OS clean up." },
 	{ }
 };
+#endif
 
 static const char doc[] =
-PROGRAM_NAME " - push-mining proxy daemon";
+   PROGRAM_NAME " - push-mining proxy daemon";
 
-
+#if defined(HAVE_ARGP_H)
 static error_t parse_opt (int key, char *arg, struct argp_state *state);
-
-
-static const struct argp argp = { options, parse_opt, NULL, doc };
+static const struct argp argp = { options, parse_opt, NULL, doc };A
+#endif 
 
 static bool server_running = true;
 static bool dump_stats;
@@ -111,6 +116,7 @@ struct server srv = {
 	.work_expire	= 120,
 };
 
+#if defined(HAVE_ARGP_H)
 static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
 	int v;
@@ -150,6 +156,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 
 	return 0;
 }
+#endif
 
 static json_t *cjson_decode(void *buf, size_t buflen)
 {
@@ -1187,7 +1194,7 @@ static int main_loop(void)
 
 int main (int argc, char *argv[])
 {
-	error_t aprc;
+	int aprc;
 	int rc = 1;
 	struct elist_head *tmpl;
 
@@ -1205,7 +1212,7 @@ int main (int argc, char *argv[])
 	 * First, parse command line. This way errors in parameters can
 	 * be written to stderr, where they belong.
 	 */
-	aprc = argp_parse(&argp, argc, argv, 0, NULL, NULL);
+	aprc = 0; // FIXME argp_parse(&argp, argc, argv, 0, NULL, NULL);
 	if (aprc) {
 		fprintf(stderr, "argp_parse failed: %s\n", strerror(aprc));
 		return 1;

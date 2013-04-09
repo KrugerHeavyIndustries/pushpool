@@ -9,3 +9,9 @@ Dependencies:
 	OpenSSL's libcrypto	sha256
 	libcurl			HTTP client
 
+Quick Install
+
+OSX: 
+   # ./autogen.sh 
+   # PKG_CONFIG_PATH=/usr/local/opt/curl/lib/pkgconfig ./configure
+   # make

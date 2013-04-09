@@ -20,6 +20,11 @@ AC_PROG_RANLIB
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(endian.h sys/endian.h)
+AC_CHECK_HEADER([argp.h], [AC_DEFINE([HAVE_ARGP_H],1,[Define to 1 if you have the <argp.h> header file])],
+[AC_MSG_WARN([argp.h header file not found.
+ OS X is known to have this problem.
+ If your system does not have argp.h then raw_reads will
+ attempt to use getopt.h for command line parsing.])])
 
 case $host in
   *-*-mingw*)
@@ -52,9 +57,10 @@ AM_PATH_PYTHON([2.2])
 AX_LIB_SQLITE3()
 AX_LIB_MYSQL()
 AX_LIB_POSTGRESQL(7.4.0)
-LIBCURL_CHECK_CONFIG(, 7.10.1, ,
-  [AC_MSG_ERROR([Missing required libcurl >= 7.10.1])])
 
+PKG_CHECK_MODULES([LIBCURL], [libcurl >= 7.10.1], ,[AC_MSG_ERROR([Missing required libcurl >= 7.10.1])])
+
+AC_SUBST(LIBCURL_LIBS)
 AC_SUBST(JANSSON_LIBS)
 AC_SUBST(EVENT_LIBS)
 AC_SUBST(PTHREAD_FLAGS)
