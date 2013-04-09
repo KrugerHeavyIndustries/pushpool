@@ -41,10 +41,6 @@
 
 #include <openssl/sha.h>
 
-#if defined(HAVE_ARGP_H)
-#include <argp.h>
-#endif 
-
 #include "server.h"
 
 const char *argp_program_version = PACKAGE_VERSION;
@@ -77,11 +73,6 @@ static struct argp_option options[] = {
 
 static const char doc[] =
    PROGRAM_NAME " - push-mining proxy daemon";
-
-#if defined(HAVE_ARGP_H)
-static error_t parse_opt (int key, char *arg, struct argp_state *state);
-static const struct argp argp = { options, parse_opt, NULL, doc };A
-#endif 
 
 static bool server_running = true;
 static bool dump_stats;
@@ -116,47 +107,54 @@ struct server srv = {
 	.work_expire	= 120,
 };
 
-#if defined(HAVE_ARGP_H)
-static error_t parse_opt (int key, char *arg, struct argp_state *state)
+static void usage()
+{
+   printf("usage: pushpoold [-c [FILE]] [-D [LEVEL]] [-E] [-F] [-P [FILE]]\n");
+}
+
+static int parse_args(int argc, char **argv)
 {
 	int v;
+   int c;
+   int index;
 
-	switch(key) {
-	case 'c':
-		srv.config = arg;
-		break;
-	case 'D':
-		v = atoi(arg);
-		if (v < 0 || v > 2) {
-			fprintf(stderr, "invalid debug level: '%s'\n", arg);
-			argp_usage(state);
-		}
-		debugging = v;
-		break;
-	case 'E':
-		use_syslog = false;
-		break;
-	case 'F':
-		srv.flags |= SFL_FOREGROUND;
-		break;
-	case 'P':
-		srv.pid_file = strdup(arg);
-		break;
-	case 1001:			/* --strict-free */
-		strict_free = true;
-		break;
-	case ARGP_KEY_ARG:
-		argp_usage(state);	/* too many args */
-		break;
-	case ARGP_KEY_END:
-		break;
-	default:
-		return ARGP_ERR_UNKNOWN;
+   while ((c = getopt(argc, argv, "c:D:EFP:")) != -1) {
+      switch(c) {
+      case 'c':
+         srv.config = optarg;
+         break;
+      case 'D':
+         v = atoi(optarg);
+         if (v < 0 || v > 2) {
+            fprintf(stderr, "invalid debug level: '%s'\n", optarg);
+            usage();
+         }
+         debugging = v;
+         break;
+      case 'E':
+         use_syslog = false;
+         break;
+      case 'F':
+         srv.flags |= SFL_FOREGROUND;
+         break;
+      case 'P':
+         srv.pid_file = strdup(optarg);
+         break;
+      case 1001:			/* --strict-free */
+         strict_free = true;
+         break;
+      case '?': /* incorrect args */
+         usage();	 
+         return -1;; 
+      }
 	}
+
+   for (index = optind; index < argc; index++) {
+      fprintf(stderr, "Non-option argument %s\n", argv[index]);
+   }
 
 	return 0;
 }
-#endif
 
 static json_t *cjson_decode(void *buf, size_t buflen)
 {
@@ -1192,9 +1190,8 @@ static int main_loop(void)
 	return rc;
 }
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-	int aprc;
 	int rc = 1;
 	struct elist_head *tmpl;
 
@@ -1212,9 +1209,7 @@ int main (int argc, char *argv[])
 	 * First, parse command line. This way errors in parameters can
 	 * be written to stderr, where they belong.
 	 */
-	aprc = 0; // FIXME argp_parse(&argp, argc, argv, 0, NULL, NULL);
-	if (aprc) {
-		fprintf(stderr, "argp_parse failed: %s\n", strerror(aprc));
+	if (parse_args(argc, argv)) {
 		return 1;
 	}
 
